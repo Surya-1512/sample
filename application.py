@@ -167,5 +167,5 @@ def get_image_data():
 
 
 
-if __name__ == '__main__':
-    application.run()
+# if __name__ == '__main__':
+#     application.run()
