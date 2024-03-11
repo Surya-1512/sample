@@ -21,7 +21,7 @@ application = Flask(__name__)
 CORS(application)
 
 # Load Myntra Dataset
-myntra = pd.read_csv('myntra.csv')
+myntra = pd.read_csv('/content/sample/myntra.csv')
 
 # Sig file which contains similarity between each product
 # sig = pickle.load(open('sig.pkl', 'rb'))
@@ -29,16 +29,16 @@ myntra = pd.read_csv('myntra.csv')
 # Load the compressed numpy array
 
 # Load the compressed numpy array
-with gzip.open('sig1.npy.gz', 'rb') as f:
+with gzip.open('/content/sample/sig1.npy.gz', 'rb') as f:
     sig1 = np.load(f)
 
-with gzip.open('sig2.npy.gz', 'rb') as f:
+with gzip.open('/content/sample/sig2.npy.gz', 'rb') as f:
     sig2 = np.load(f)
 
-with gzip.open('sig3.npy.gz', 'rb') as f:
+with gzip.open('/content/sample/sig3.npy.gz', 'rb') as f:
     sig3 = np.load(f)
 
-with gzip.open('sig4.npy.gz', 'rb') as f:
+with gzip.open('/content/sample/sig4.npy.gz', 'rb') as f:
     sig4 = np.load(f)
 
 # print(sig1.shape, sig2.shape, sig3.shape, sig4.shape)
@@ -49,21 +49,21 @@ sig = np.vstack((sig1, sig2, sig3, sig4))
 # print(sig)
 
 # Indices to get product title
-indices = pickle.load(open('indices.pkl', 'rb'))
+indices = pickle.load(open('/content/sample/indices.pkl', 'rb'))
 
 # features of each product image in our dataset
-embeddings = np.array(pickle.load(open('embeddings.pkl', 'rb')))
+embeddings = np.array(pickle.load(open('/content/sample/embeddings.pkl', 'rb')))
 
 # all popular products in men's category
-men_popular = pd.read_pickle(r'men_popular.pkl')
+men_popular = pd.read_pickle(r'/content/sample/men_popular.pkl')
 
 # all popular products in women's category
-women_popular = pd.read_pickle(r'women_popular.pkl')
+women_popular = pd.read_pickle(r'/content/sample/women_popular.pkl')
 
 # all popular products
-popular_products = pd.read_pickle(r'popular_products.pkl')
+popular_products = pd.read_pickle(r'/content/sample/popular_products.pkl')
 
-filtered_indices = pd.read_pickle(r'filtered_indices.pkl')
+filtered_indices = pd.read_pickle(r'/content/sample/filtered_indices.pkl')
 filtered_indices = np.array(filtered_indices)
 
 # resnet model to train uploaded images
@@ -163,9 +163,64 @@ def get_image_data():
     return myntra.iloc[indices[0]].to_json(orient='records')
 
 
+# Define the paths for uploaded images and main.py file
+input_dir = '/content/sample/TryYours-Virtual-Try-On/static'
+MAIN_PY_PATH = '/content/sample/TryYours-Virtual-Try-On/main.py'
 
+# Function to run the main.py file
+def run_main_py():
+    # Check if the main.py file exists
+    if os.path.exists(MAIN_PY_PATH):
+        # Execute the main.py file
+        subprocess.run(['python', MAIN_PY_PATH])
+        return True
+    else:
+        return False
 
+# Function to upload cloth image
+@application.route('/upload_cloth', methods=['POST'])
+def upload_cloth():
+    if 'cloth_image' not in request.files:
+        return jsonify({'error': 'No cloth image uploaded'})
 
+    cloth_image = request.files['cloth_image']
+    cloth_image.save(os.path.join(input_dir, 'cloth_web.jpg'))
 
-# if __name__ == '__main__':
-#     application.run()
+    # Check if both images are uploaded and run main.py
+    if 'person_image' in request.files:
+        run_main_py()
+
+    return jsonify({'message': 'Cloth image uploaded successfully'})
+
+# Function to upload person image
+@application.route('/upload_person', methods=['POST'])
+def upload_person():
+    if 'person_image' not in request.files:
+        return jsonify({'error': 'No person image uploaded'})
+
+    person_image = request.files['person_image']
+    person_image.save(os.path.join(input_dir, 'origin_web.jpg'))
+
+    # Check if both images are uploaded and run main.py
+    if 'cloth_image' in request.files:
+        run_main_py()
+
+    return jsonify({'message': 'Person image uploaded successfully'})
+
+# Function to display the final image
+def display_final_image():
+    image_path = "/content/sample/TryYours-Virtual-Try-On/static/finalimg.png"
+    if os.path.exists(image_path):
+        image1 = Image.open(image_path)
+        image1.show()
+        return jsonify({'message': 'Final image displayed'})
+    else:
+        return jsonify({'error': 'Final image not found'})
+
+# Route to display the final image
+@application.route('/display_image', methods=['GET'])
+def display_image():
+    return display_final_image()
+
+if __name__ == '__main__':
+    application.run()
