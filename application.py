@@ -18,7 +18,7 @@ import gzip
 import cv2
 
 application = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(application, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 
 # Load Myntra Dataset
